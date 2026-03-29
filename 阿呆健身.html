@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>💪 阿呆健身</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: #f3f4f6; 
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: #f3f4f6; }
+        .header { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 60px 20px 20px; position: relative; }
+        .header-title { color: #fff; font-size: 22px; font-weight: bold; }
+        .content { flex: 1; padding: 16px; overflow-y: auto; }
+        .card { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #1f2937; }
+        .next-workout { font-size: 26px; font-weight: bold; color: #6366f1; margin-bottom: 16px; }
+        .btn { padding: 16px; border-radius: 12px; text-align: center; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; border: none; width: 100%; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #fff; }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; }
+        .empty { color: #9ca3af; text-align: center; padding: 20px 0; }
+        .tab-bar { background: #fff; display: flex; border-top: 1px solid #e5e7eb; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); position: sticky; bottom: 0; }
+        .tab { flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; color: #9ca3af; font-size: 12px; }
+        .tab.active { color: #6366f1; }
+        .tab-icon { font-size: 24px; margin-bottom: 4px; }
+        .screen { display: none; flex: 1; flex-direction: column; }
+        .screen.active { display: flex; }
+        .history-item { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-size: 16px; font-weight: 600; color: #1f2937; }
+        .history-muscles { font-size: 14px; color: #6b7280; margin-top: 4px; }
+        .history-sets { font-size: 14px; color: #6366f1; font-weight: 500; margin-top: 2px; }
+        .equipment-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; }
+        .equipment-chip { background: #f3f4f6; padding: 10px 16px; border-radius: 20px; white-space: nowrap; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .equipment-chip.selected { background: #6366f1; color: #fff; }
+        .input-row { display: flex; gap: 12px; }
+        .input-container { flex: 1; }
+        .input { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; font-size: 16px; width: 100%; background: #fff; }
+        .input:focus { outline: none; border-color: #6366f1; }
+        .label { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; margin-top: 12px; display: block; }
+        .set-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+        .set-item:last-child { border-bottom: none; }
+        .set-equipment { font-size: 16px; font-weight: 600; color: #1f2937; }
+        .set-details { font-size: 14px; color: #6366f1; margin-top: 2px; }
+        .delete-btn { color: #ef4444; padding: 8px; font-size: 20px; }
+        .timer-card { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); color: #fff; text-align: center; padding: 24px; border-radius: 16px; margin-bottom: 16px; }
+        .timer-display { font-size: 48px; font-weight: bold; font-family: 'Courier New', monospace; margin-bottom: 12px; }
+        .timer-btns { display: flex; gap: 12px; justify-content: center; }
+        .timer-btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .timer-btn-start { background: #10b981; color: #fff; }
+        .timer-btn-reset { background: #6b7280; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- 首页 -->
+        <div id="home" class="screen active">
+            <div class="header"><div class="header-title">💪 阿呆健身</div></div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-title">下次训练</div>
+                    <div class="next-workout" id="nextWorkout">推日 (胸/肩/三头)</div>
+                    <button class="btn btn-primary" onclick="showScreen('workout')">开始训练</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">组间休息计时器</div>
+                    <div class="timer-card">
+                        <div class="timer-display" id="timerDisplay">01:30</div>
+                        <div class="timer-btns">
+                            <button class="timer-btn timer-btn-start" id="timerBtn" onclick="toggleTimer()">开始</button>
+                            <button class="timer-btn timer-btn-reset" onclick="resetTimer()">重置</button>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-container">
+                            <label class="label">休息时间（秒）</label>
+                            <input type="number" class="input" id="timerInput" value="90" min="10" max="300">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">最近训练</div>
+                    <div id="recentWorkouts"></div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab active" onclick="showScreen('home')">
+                    <span class="tab-icon">🏠</span>
+                    <span>首页</span>
+                </div>
+                <div class="tab" onclick="showScreen('history')">
+                    <span class="tab-icon">📋</span>
+                    <span>历史</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 训练页 -->
+        <div id="workout" class="screen">
+            <div class="header" style="display:flex;justify-content:space-between;align-items:center;">
+                <button onclick="showScreen('home')" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;">←</button>
+                <div class="header-title">🏋️ 训练中</div>
+                <div style="width:40px;"></div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-title">添加训练组</div>
+                    <label class="label">选择器械</label>
+                    <div class="equipment-list" id="equipmentList"></div>
+                    <div class="input-row">
+                        <div class="input-container">
+                            <label class="label">重量 (kg)</label>
+                            <input type="number" class="input" id="weightInput" placeholder="0">
+                        </div>
+                        <div class="input-container">
+                            <label class="label">次数</label>
+                            <input type="number" class="input" id="repsInput" placeholder="0">
+                        </div>
+                    </div>
+                    <label class="label">备注（可选）</label>
+                    <input type="text" class="input" id="notesInput" placeholder="添加备注...">
+                    <button class="btn btn-success" style="margin-top:16px;" onclick="addSet()">添加组</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">本次训练</div>
+                    <div id="currentSets"></div>
+                </div>
+                
+                <button class="btn btn-primary" id="finishBtn" onclick="finishWorkout()">完成训练</button>
+            </div>
+        </div>
+
+        <!-- 历史页 -->
+        <div id="history" class="screen">
+            <div class="header"><div class="header-title">📋 历史记录</div></div>
+            <div class="content">
+                <div id="historyList"></div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab" onclick="showScreen('home')">
+                    <span class="tab-icon">🏠</span>
+                    <span>首页</span>
+                </div>
+                <div class="tab active" onclick="showScreen('history')">
+                    <span class="tab-icon">📋</span>
+                    <span>历史</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MUSCLE_GROUPS = {
+            chest: '胸部', shoulders: '肩部', triceps: '三头肌',
+            back: '背部', biceps: '二头肌', legs: '腿部', core: '核心'
+        };
+
+        const EQUIPMENT_DATABASE = [
+            { id: 'bench-press', name: '卧推', muscleGroups: ['chest', 'triceps'], split: 'push' },
+            { id: 'incline-bench', name: '上斜卧推', muscleGroups: ['chest', 'shoulders'], split: 'push' },
+            { id: 'shoulder-press', name: '肩推', muscleGroups: ['shoulders', 'triceps'], split: 'push' },
+            { id: 'lateral-raise', name: '侧平举', muscleGroups: ['shoulders'], split: 'push' },
+            { id: 'tricep-pushdown', name: '三头下压', muscleGroups: ['triceps'], split: 'push' },
+            { id: 'pull-up', name: '引体向上', muscleGroups: ['back', 'biceps'], split: 'pull' },
+            { id: 'lat-pulldown', name: '高位下拉', muscleGroups: ['back'], split: 'pull' },
+            { id: 'seated-row', name: '坐姿划船', muscleGroups: ['back', 'biceps'], split: 'pull' },
+            { id: 'bicep-curl', name: '二头弯举', muscleGroups: ['biceps'], split: 'pull' },
+            { id: 'squat', name: '深蹲', muscleGroups: ['legs'], split: 'legs' },
+            { id: 'leg-press', name: '腿举', muscleGroups: ['legs'], split: 'legs' },
+            { id: 'leg-extension', name: '腿屈伸', muscleGroups: ['legs'], split: 'legs' },
+            { id: 'leg-curl', name: '腿弯举', muscleGroups: ['legs'], split: 'legs' },
+        ];
+
+        let workouts = JSON.parse(localStorage.getItem('adai-workouts') || '[]');
+        let currentWorkout = null;
+        let selectedEquipment = null;
+        let timerInterval = null;
+        let timerRunning = false;
+        let timerSeconds = 90;
+        let timerRemaining = 90;
+
+        function init() {
+            renderEquipmentList();
+            renderRecentWorkouts();
+            renderHistoryList();
+            updateNextWorkout();
+            initTimer();
+        }
+
+        function showScreen(name) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(name).classList.add('active');
+            
+            if (name === 'home') {
+                document.querySelectorAll('#home .tab')[0].classList.add('active');
+                renderRecentWorkouts();
+                updateNextWorkout();
+            } else if (name === 'history') {
+                document.querySelectorAll('#history .tab')[1].classList.add('active');
+                renderHistoryList();
+            } else if (name === 'workout') {
+                startNewWorkout();
+            }
+        }
+
+        function getNextSplit() {
+            if (workouts.length === 0) return 'push';
+            const last = workouts[0];
+            const muscles = last.muscleGroupsHit || [];
+            const hasPush = muscles.includes('chest') || muscles.includes('shoulders') || muscles.includes('triceps');
+            const hasPull = muscles.includes('back') || muscles.includes('biceps');
+            const hasLegs = muscles.includes('legs');
+            if (hasPush && !hasPull && !hasLegs) return 'pull';
+            if (hasPull && !hasLegs) return 'legs';
+            return 'push';
+        }
+
+        function getSplitName(split) {
+            const names = { push: '推日 (胸/肩/三头)', pull: '拉日 (背/二头)', legs: '腿日' };
+            return names[split] || split;
+        }
+
+        function updateNextWorkout() {
+            const next = getNextSplit();
+            document.getElementById('nextWorkout').textContent = getSplitName(next);
+        }
+
+        function renderEquipmentList() {
+            const nextSplit = getNextSplit();
+            const equipment = EQUIPMENT_DATABASE.filter(e => e.split === nextSplit);
+            const html = equipment.map(e => 
+                `<div class="equipment-chip" data-id="${e.id}" onclick="selectEquipment('${e.id}')">${e.name}</div>`
+            ).join('');
+            document.getElementById('equipmentList').innerHTML = html;
+        }
+
+        function selectEquipment(id) {
+            selectedEquipment = id;
+            document.querySelectorAll('.equipment-chip').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`.equipment-chip[data-id="${id}"]`).classList.add('selected');
+        }
+
+        function startNewWorkout() {
+            currentWorkout = { id: Date.now().toString(), date: Date.now(), sets: [], muscleGroupsHit: [] };
+            selectedEquipment = null;
+            document.getElementById('weightInput').value = '';
+            document.getElementById('repsInput').value = '';
+            document.getElementById('notesInput').value = '';
+            document.querySelectorAll('.equipment-chip').forEach(c => c.classList.remove('selected'));
+            renderCurrentSets();
+            renderEquipmentList();
+        }
+
+        function addSet() {
+            if (!selectedEquipment) return alert('请选择器械');
+            const weight = parseFloat(document.getElementById('weightInput').value);
+            const reps = parseInt(document.getElementById('repsInput').value);
+            if (!weight || !reps) return alert('请输入重量和次数');
+            
+            const eq = EQUIPMENT_DATABASE.find(e => e.id === selectedEquipment);
+            const newSet = {
+                id: Date.now().toString(),
+                equipmentId: selectedEquipment,
+                weight, reps,
+                notes: document.getElementById('notesInput').value || undefined
+            };
+            
+            currentWorkout.sets.push(newSet);
+            currentWorkout.muscleGroupsHit = Array.from(new Set([...currentWorkout.muscleGroupsHit, ...eq.muscleGroups]));
+            
+            document.getElementById('weightInput').value = '';
+            document.getElementById('repsInput').value = '';
+            document.getElementById('notesInput').value = '';
+            renderCurrentSets();
+        }
+
+        function removeSet(id) {
+            currentWorkout.sets = currentWorkout.sets.filter(s => s.id !== id);
+            const muscles = Array.from(new Set(
+                currentWorkout.sets.flatMap(s => {
+                    const eq = EQUIPMENT_DATABASE.find(e => e.id === s.equipmentId);
+                    return eq ? eq.muscleGroups : [];
+                })
+            ));
+            currentWorkout.muscleGroupsHit = muscles;
+            renderCurrentSets();
+        }
+
+        function renderCurrentSets() {
+            const container = document.getElementById('currentSets');
+            if (!currentWorkout || currentWorkout.sets.length === 0) {
+                container.innerHTML = '<div class="empty">还没有添加任何组</div>';
+                return;
+            }
+            container.innerHTML = currentWorkout.sets.map(s => {
+                const eq = EQUIPMENT_DATABASE.find(e => e.id === s.equipmentId);
+                return `
+                    <div class="set-item">
+                        <div>
+                            <div class="set-equipment">${eq ? eq.name : s.equipmentId}</div>
+                            <div class="set-details">${s.weight}kg × ${s.reps}次</div>
+                            ${s.notes ? `<div style="font-size:12px;color:#9ca3af;">${s.notes}</div>` : ''}
+                        </div>
+                        <div class="delete-btn" onclick="removeSet('${s.id}')">🗑️</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function finishWorkout() {
+            if (!currentWorkout || currentWorkout.sets.length === 0) return alert('请至少添加一组训练');
+            workouts.unshift(currentWorkout);
+            localStorage.setItem('adai-workouts', JSON.stringify(workouts));
+            currentWorkout = null;
+            showScreen('home');
+        }
+
+        function deleteWorkout(id) {
+            if (!confirm('确定要删除这条训练记录吗？')) return;
+            workouts = workouts.filter(w => w.id !== id);
+            localStorage.setItem('adai-workouts', JSON.stringify(workouts));
+            renderHistoryList();
+            renderRecentWorkouts();
+            updateNextWorkout();
+        }
+
+        function renderRecentWorkouts() {
+            const container = document.getElementById('recentWorkouts');
+            const recent = workouts.slice(0, 3);
+            if (recent.length === 0) {
+                container.innerHTML = '<div class="empty">还没有训练记录，开始你的第一次训练吧！</div>';
+                return;
+            }
+            container.innerHTML = recent.map(w => {
+                const date = new Date(w.date);
+                const dateStr = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const muscles = (w.muscleGroupsHit || []).map(m => MUSCLE_GROUPS[m] || m).join(' · ');
+                return `
+                    <div class="history-item">
+                        <div class="history-date">${dateStr}</div>
+                        <div class="history-muscles">${muscles}</div>
+                        <div class="history-sets">${w.sets.length} 组</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('historyList');
+            if (workouts.length === 0) {
+                container.innerHTML = '<div class="card"><div class="empty">还没有训练记录</div></div>';
+                return;
+            }
+            container.innerHTML = workouts.map(w => {
+                const date = new Date(w.date);
+                const dateStr = date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const muscles = (w.muscleGroupsHit || []).map(m => MUSCLE_GROUPS[m] || m).join(' · ');
+                const setsHtml = w.sets.map(s => {
+                    const eq = EQUIPMENT_DATABASE.find(e => e.id === s.equipmentId);
+                    return `
+                        <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #f3f4f6;margin-top:8px;">
+                            <span style="font-size:14px;">${eq ? eq.name : s.equipmentId}</span>
+                            <span style="font-size:14px;color:#6366f1;font-weight:500;">${s.weight}kg × ${s.reps}次</span>
+                        </div>
+                    `;
+                }).join('');
+                return `
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <div class="history-date">${dateStr}</div>
+                            <div class="delete-btn" onclick="deleteWorkout('${w.id}')">🗑️</div>
+                        </div>
+                        <div class="history-muscles">部位: ${muscles}</div>
+                        <div class="history-sets">总组数: ${w.sets.length}</div>
+                        ${setsHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function initTimer() {
+            timerSeconds = parseInt(localStorage.getItem('adai-timer') || '90');
+            timerRemaining = timerSeconds;
+            document.getElementById('timerInput').value = timerSeconds;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timerRemaining / 60).toString().padStart(2, '0');
+            const secs = (timerRemaining % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').textContent = `${mins}:${secs}`;
+        }
+
+        function toggleTimer() {
+            if (timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                document.getElementById('timerBtn').textContent = '继续';
+            } else {
+                timerInterval = setInterval(() => {
+                    timerRemaining--;
+                    updateTimerDisplay();
+                    if (timerRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        timerRunning = false;
+                        document.getElementById('timerBtn').textContent = '开始';
+                        if (navigator.vibrate) navigator.vibrate(200);
+                        alert('休息时间到！');
+                    }
+                }, 1000);
+                timerRunning = true;
+                document.getElementById('timerBtn').textContent = '暂停';
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerSeconds = parseInt(document.getElementById('timerInput').value) || 90;
+            timerRemaining = timerSeconds;
+            localStorage.setItem('adai-timer', timerSeconds.toString());
+            document.getElementById('timerBtn').textContent = '开始';
+            updateTimerDisplay();
+        }
+
+        document.getElementById('timerInput').addEventListener('change', function() {
+            if (!timerRunning) {
+                timerSeconds = parseInt(this.value) || 90;
+                timerRemaining = timerSeconds;
+                localStorage.setItem('adai-timer', timerSeconds.toString());
+                updateTimerDisplay();
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

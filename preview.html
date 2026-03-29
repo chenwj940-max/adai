@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿呆健身 - 预览</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+        }
+        
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 30px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            z-index: 100;
+        }
+        
+        .screen {
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .screen.active {
+            display: flex;
+        }
+        
+        .header {
+            background: #6366f1;
+            padding: 60px 20px 20px;
+        }
+        
+        .header-title {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #1f2937;
+        }
+        
+        .next-workout {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6366f1;
+            margin-bottom: 16px;
+        }
+        
+        .start-button {
+            background: #6366f1;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .start-button:hover {
+            background: #4f46e5;
+        }
+        
+        .start-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .empty-text {
+            color: #9ca3af;
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .history-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .history-date {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .history-muscles {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+        
+        .history-sets {
+            font-size: 14px;
+            color: #6366f1;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        
+        .tab-bar {
+            background: #fff;
+            display: flex;
+            border-top: 1px solid #e5e7eb;
+            padding: 12px 0 30px;
+        }
+        
+        .tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .tab-item i {
+            font-size: 24px;
+            color: #9ca3af;
+        }
+        
+        .tab-item.active i {
+            color: #6366f1;
+        }
+        
+        .tab-text {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        
+        .tab-item.active .tab-text {
+            color: #6366f1;
+            font-weight: 500;
+        }
+        
+        .label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            margin-top: 12px;
+        }
+        
+        .equipment-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        
+        .equipment-chip {
+            background: #f3f4f6;
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .equipment-chip.selected {
+            background: #6366f1;
+        }
+        
+        .equipment-chip-text {
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        .equipment-chip.selected .equipment-chip-text {
+            color: #fff;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .input-container {
+            flex: 1;
+        }
+        
+        .input {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            width: 100%;
+        }
+        
+        .add-button {
+            background: #10b981;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 16px;
+            cursor: pointer;
+        }
+        
+        .add-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .set-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .set-equipment {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .set-details {
+            font-size: 14px;
+            color: #6366f1;
+            margin-top: 2px;
+        }
+        
+        .finish-button {
+            background: #6366f1;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        
+        .finish-button-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .preview-nav {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .preview-nav button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        
+        .back-button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="phone-notch"></div>
+        
+        <!-- 首页 -->
+        <div id="home-screen" class="screen active">
+            <div class="header">
+                <div class="header-title">💪 阿呆健身</div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-title">下次训练</div>
+                    <div class="next-workout">推日 (胸/肩/三头)</div>
+                    <div class="start-button" onclick="showScreen('workout')">
+                        <span class="start-button-text">开始训练</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">最近训练</div>
+                    <div class="empty-text">还没有训练记录，开始你的第一次训练吧！</div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab-item active" onclick="showScreen('home')">
+                    <i class="fas fa-home"></i>
+                    <span class="tab-text">首页</span>
+                </div>
+                <div class="tab-item" onclick="showScreen('history')">
+                    <i class="fas fa-list"></i>
+                    <span class="tab-text">历史</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 训练页 -->
+        <div id="workout-screen" class="screen">
+            <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="back-button" onclick="showScreen('home')">
+                    <i class="fas fa-arrow-left" style="font-size: 24px;"></i>
+                </button>
+                <div class="header-title">训练中</div>
+                <div style="width: 40px;"></div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="card-title">添加训练组</div>
+                    <div class="label">选择器械</div>
+                    <div class="equipment-list">
+                        <div class="equipment-chip selected">
+                            <span class="equipment-chip-text">卧推</span>
+                        </div>
+                        <div class="equipment-chip">
+                            <span class="equipment-chip-text">上斜卧推</span>
+                        </div>
+                        <div class="equipment-chip">
+                            <span class="equipment-chip-text">肩推</span>
+                        </div>
+                        <div class="equipment-chip">
+                            <span class="equipment-chip-text">侧平举</span>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-container">
+                            <div class="label">重量 (kg)</div>
+                            <input type="text" class="input" placeholder="0" value="60">
+                        </div>
+                        <div class="input-container">
+                            <div class="label">次数</div>
+                            <input type="text" class="input" placeholder="0" value="10">
+                        </div>
+                    </div>
+                    <div class="label">备注 (可选)</div>
+                    <input type="text" class="input" placeholder="添加备注...">
+                    <div class="add-button">
+                        <span class="add-button-text">添加组</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">本次训练</div>
+                    <div class="set-item">
+                        <div>
+                            <div class="set-equipment">卧推</div>
+                            <div class="set-details">60kg × 10次</div>
+                        </div>
+                        <i class="fas fa-trash-alt" style="color: #ff6b6b;"></i>
+                    </div>
+                    <div class="set-item">
+                        <div>
+                            <div class="set-equipment">卧推</div>
+                            <div class="set-details">60kg × 8次</div>
+                        </div>
+                        <i class="fas fa-trash-alt" style="color: #ff6b6b;"></i>
+                    </div>
+                </div>
+                <div class="finish-button">
+                    <span class="finish-button-text">完成训练</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 历史页 -->
+        <div id="history-screen" class="screen">
+            <div class="header">
+                <div class="header-title">训练历史</div>
+            </div>
+            <div class="content">
+                <div class="card">
+                    <div class="empty-text">还没有训练记录</div>
+                </div>
+            </div>
+            <div class="tab-bar">
+                <div class="tab-item" onclick="showScreen('home')">
+                    <i class="fas fa-home"></i>
+                    <span class="tab-text">首页</span>
+                </div>
+                <div class="tab-item active" onclick="showScreen('history')">
+                    <i class="fas fa-list"></i>
+                    <span class="tab-text">历史</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="preview-nav">
+        <button onclick="showScreen('home')">首页</button>
+        <button onclick="showScreen('workout')">训练中</button>
+        <button onclick="showScreen('history')">历史</button>
+    </div>
+
+    <script>
+        function showScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.getElementById(screenName + '-screen').classList.add('active');
+            
+            if (screenName === 'home') {
+                document.querySelectorAll('#home-screen .tab-item')[0].classList.add('active');
+            } else if (screenName === 'history') {
+                document.querySelectorAll('#history-screen .tab-item')[1].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
